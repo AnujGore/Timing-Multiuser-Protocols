@@ -5,7 +5,7 @@ import numpy as np
 from helpers import good_factors
 
 
-def monte_carlo_brand(vertices, sim_count, p, q, k, ind = False):
+def monte_carlo(vertices, swap_samples, fusion_samples, p, q, k, ind = False):
 
     list_of_distances = []
     
@@ -19,8 +19,8 @@ def monte_carlo_brand(vertices, sim_count, p, q, k, ind = False):
     for d in list_of_distances:
         nesting_levels.append(int(np.log2(good_factors(d))[0]))
 
-    calculator = RepeaterChainSampler(max(nesting_levels), p, q, k)
-    calculator.sample(sim_count)
+    calculator = MonteCarloFusion(max(nesting_levels), p, q, k)
+    calculator.sample(swap_samples, fusion_samples)
 
     if (ind):
         return calculator.time_samples, calculator.tp_samples, calculator.tq_samples, calculator.tk_samples
@@ -28,7 +28,7 @@ def monte_carlo_brand(vertices, sim_count, p, q, k, ind = False):
         return calculator.tp_samples
 
 
-class RepeaterChainSampler():
+class MonteCarloFusion():
     """Monte Carlo approach to calculating waiting time and fidelities. """
 
     def __init__(self, n, pgen, pswap, pfusion):
@@ -39,11 +39,21 @@ class RepeaterChainSampler():
         }
         self.n = n
 
-    def sample(self, swap_samples):
-        self.time_samples, self.tp_samples, self.tq_samples, self.tk_samples = self.sample_fusion(swap_samples)
+    def sample(self, swap_samples, fusion_samples):
+        self.time_samples, self.tp_samples, self.tq_samples, self.tk_samples = self.sample_fusion(swap_samples, fusion_samples)
 
-    def sample_fusion(self, swap_samples):
-        return (np.ones(shape = (4, swap_samples))*(1/self.params['pfusion']))*self.sample_chain(swap_samples)
+    def sample_fusion(self, swap_samples, fusion_samples):
+        success = []
+        for _ in range(fusion_samples):
+            fusion_success = False
+            exp_val = 0
+            while fusion_success != True:
+                exp_val +=1
+                fusion_success = np.random.random() <= self.params['pfusion']
+            success.append(exp_val)
+
+        
+        return (np.ones(shape = (4, swap_samples))*(np.mean(success)))*self.sample_chain(swap_samples)
         
 
     def sample_chain(self, sample_size):
