@@ -1,11 +1,49 @@
-# Timing Multiuser Protocols
+Timing Multiuser Protocols
+==========================
 
-Here we develop analytical and monte-carlo based methods to time multi-user entanglement distribution protocols.
+In this repository, we store and document all the resources necessary for quantifying the latency of different multiuser entanglement routing protocols. The purpose of this file is to note down the organisation and pinpoint the location of information necessary for understanding and reproducing our results
 
-We develop Shortest Path (SP) protocol first, and can be run through the SP.ipynb file.  
+### Table of Contents
+* About this project
+* Getting Started
+  * Prerequisites
+  * Installation
+* Usage
+* License
+* Contact
 
-We develop the timings in seconds as well as time-slots.
+--------------------
 
-Within the `ShortestPath` folder, the analytical solutions and Monte-Carlo simulation results are stored. The `analytical_approaches.py` file contains the analytical while the `shortest_path.py` file has the Monte-Carlo simulation. The `misc` folder contains the additional functions which help in parallelization and miscellanous. All functionality is used in the `SP.ipynb` file where the results are reported. 
+### About this project
 
-The `heralding models` folder contains the files which describe the method of heralding used by the protocol. Comparing these models gives us a better insight into the efficacy of each protocol.
+The protocols we look to explore are the Shortest Path, MultiPath Greedy and MultiPath Cooperative or SP, MP-G and MP-C respectively. The first protocol was introduced by [Bugalho et al](https://arxiv.org/pdf/2103.14759), and in it, entanglement is generated on a predetermined path from a selected central node to each of the users. When generated, the fusion operation at the central node entangles the users giving us our needed state. The latter two protocols were introduced by [Sutcliffe et al](https://arxiv.org/pdf/2303.03334) and in these protocols, the need for a precomputed path is made unnecessary. In MP-G, entanglement is simulated and the protocol checks if there exists a valid path from the user to the central node, repeating entanglement generation if necessary. For MP-C, entanglement is simulated and the protocol checks if there exists a tree connecting the nodes, eliminating the need for the central node. The linked papers discuss the protocols in detail. Here we report the method used to quantify the latency of these protocols.
+
+-------------------
+
+### Getting started
+
+We list the necessary libraries in the `requirements.txt` file and to recreate our results, running 
+
+```
+pip install -r requirements.txt
+```
+
+in the command line of the folder where the project needs to be stored.
+
+------------------
+
+### Usage
+
+Within each folder, the `.ipynb` file exists which instruct how each result was reached and how it can be reproduced.
+
+-----------------
+
+### License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+
+----------------
+
+### Contact
+
+Anuj Gore - anujgore@gmail.com
