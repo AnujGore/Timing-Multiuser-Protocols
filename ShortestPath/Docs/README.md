@@ -1,6 +1,6 @@
 # Shortest Path Documentation
 
-This folder stores the software and resources for the Shortest Path multiparty routing protocol. he purpose of this documentation is to ensure clarity on the process, format, and usage of the Shortest Path routing method.
+This folder stores the software and resources for the Shortest Path multiparty routing protocol. The purpose of this documentation is to ensure clarity on the process, format, and usage of the Shortest Path routing method.
 
 ### Overview
 
@@ -14,9 +14,9 @@ ShortestPath/
 │   └── utils.py        # Utility functions for data processing
 │
 ├── Docs/               # Documentation folder (this folder)
-│   ├── README.md       # Overview of data generation
+│   └── README.md       # Overview of data generation
 |
-├── SP.ipynb
+└── SP.ipynb
 ```
 
 ### Key files
