@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from .helpers import decompose_into_powers
+from .utils import decompose_into_powers
 
 from scipy.sparse import kron, csc_matrix
 

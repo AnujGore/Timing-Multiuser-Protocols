@@ -1,5 +1,5 @@
 import numpy as np
-from .helpers import decompose_into_powers
+from .utils import decompose_into_powers
 
 def monte_carlo(vertices, swap_samples, fusion_samples, p, q, k, ind = False):
 
