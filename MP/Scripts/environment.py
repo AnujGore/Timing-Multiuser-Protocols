@@ -1,5 +1,5 @@
 import gymnasium as gym
-from utils import generate_initial_state, generate_all_actions
+from utils import generate_initial_state, generate_all_actions, _correct_state
 import numpy as np
 
 class GridTopologyEnv(gym.Env):
@@ -22,7 +22,7 @@ class GridTopologyEnv(gym.Env):
             self.all_actions_dict[index] = element
 
         self.action_space = gym.spaces.Discrete(len(self.all_actions_dict))  #Only upper (or lower) diagonal elements of the n x n matrix
-        self.observation_space = gym.spaces.Box(low = -np.inf, high = np.inf, shape = (n, n))
+        self.observation_space = gym.spaces.Box(low=-2.0, high=np.inf,shape=(n, n),dtype=np.float32)
 
         self.agent_state = generate_initial_state(self.n, self.pgen)
         self.current_state = self.agent_state
@@ -31,7 +31,7 @@ class GridTopologyEnv(gym.Env):
     def reset(self, *, seed = None, options = None):
         super().reset(seed=seed, options=options)
 
-        self.agent_state = generate_initial_state(self.n, self.pgen)
+        self.agent_state = generate_initial_state(self.n, self.pgen).astype(np.float32)
 
         return self.agent_state, {}
 
@@ -56,11 +56,6 @@ class GridTopologyEnv(gym.Env):
         
         nodes_to_entangle = np.array(nodes_to_entangle)
 
-        #Find which edges need to wait
-        all_edges = [i for i in range(0, self.n-1)]
-        edges_to_wait = [val for val in all_edges if val not in nodes_to_entangle]
-
-
 
         candidate_state = np.copy(self.agent_state)
 
@@ -68,25 +63,39 @@ class GridTopologyEnv(gym.Env):
         for i, node_pos in enumerate(nodes_to_swap):
             if np.random.rand() < self.pswap:
                 #Get nodes connected to the node
-                input_nodes = np.where(candidate_state[node_pos] > 0.)[0]    
+                input_nodes = np.where(candidate_state[node_pos] > 0.)[0]
+
+                if input_nodes.size < 2:
+                    break     
 
                 #Make it's edge alive (set to 1.)
                 candidate_state[input_nodes[0], input_nodes[1]] = np.max(candidate_state[node_pos][input_nodes])+1     
-                candidate_state[input_nodes[1], input_nodes[0]] = np.max(candidate_state[node_pos][input_nodes])+1
 
                 #Remove edges from the initial edges
-                candidate_state[node_pos, input_nodes[0]] = 0.             
+                candidate_state[input_nodes[0], node_pos] = 0.             
                 candidate_state[node_pos, input_nodes[1]] = 0.
-                candidate_state[input_nodes[0], node_pos] = 0.
-                candidate_state[input_nodes[1], node_pos] = 0.
+
+
+        #Find which edges need to wait
+        edges_to_wait = []
+        relevant_state_mask = np.flip(np.tri(self.n, self.n, k = -1))
+        relevant_states = np.multiply(relevant_state_mask, candidate_state)
+
+        for row in range(self.n):
+            for col in range(self.n):
+                if relevant_states[row, col] > 0.:
+                    edges_to_wait.append((row, col))
+
+        #Make unused edges wait
+        for i, w in enumerate(edges_to_wait):
+            candidate_state[w[0], w[1]] += 1.
                 
+        #Entangled needed nodes
         for i, e in enumerate(nodes_to_entangle):
             if np.random.rand() < self.pgen:
                 candidate_state[e, e+1] = 1.
-            
-        for i, w in enumerate(edges_to_wait):
-            candidate_state[w, w+1] += 1.
-                
+
+        self.agent_state = _correct_state(candidate_state).astype(np.float32)
 
         terminated = self._is_final_state(self.agent_state)
         reward = 1 if terminated else 0
