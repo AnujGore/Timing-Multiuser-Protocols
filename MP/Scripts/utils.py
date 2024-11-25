@@ -1,7 +1,8 @@
 import numpy as np
 from itertools import product
+import torch
 
-def generate_initial_state(n, pgen):
+def generate_initial_state(n, pgen, init_entangled):
     """
     Generates an initial state matrix of size `n x n`.
 
@@ -18,8 +19,11 @@ def generate_initial_state(n, pgen):
     arr = np.zeros(shape=(n, n))
     for i in range(n):
         arr[i, i] = -1.  # Set diagonal elements to -1
-    for e in range(1, n):
-        arr[e-1, e] = np.random.geometric(pgen)  # Populate off-diagonal elements
+
+    if init_entangled:
+        for e in range(1, n):
+            arr[e-1, e] = np.random.geometric(pgen)  # Populate off-diagonal elements
+            
     arr = np.array(arr, dtype=np.float32)
     return _correct_state(arr)
 
@@ -66,3 +70,42 @@ def generate_all_actions(n):
         all_actions_as_matrix.append(action_matrix)
 
     return np.array(all_actions_as_matrix)
+
+
+def generate_all_states(n, lifetime):
+    """
+    Generates all possible states matrices for a system of size `n` for a lifetime `lifetime.
+
+    Parameters:
+    n (int): Size of the system.
+
+    Returns:
+    np.ndarray: An array of `(n x n)` matrices, each representing a unique action configuration.
+    """
+    repeat_val = sum([i for i in range(1, n)])
+    all_states_as_array = list(product(range(lifetime+1), repeat = repeat_val))
+    
+    all_states_as_matrix = []
+    for arr in all_states_as_array:
+        state_matrix = -1*np.ones(shape = (n, n))
+        triu_indices = np.triu_indices(n, 1)
+        state_matrix[triu_indices] = np.array(arr)
+        all_states_as_matrix.append(_correct_state(state_matrix))
+    
+    return np.array(all_states_as_matrix)
+
+def find_tensor(tensor, target):
+    """
+    Finds 2d tensor (`target`) among 3d tensor (`tensor`).
+
+    Parameters:
+    tensor (tensor): All the tensors to search from
+    target (tensor): Target tensor
+
+    Returns:
+    int: index of tensors
+    
+    """
+    matches_mask = (tensor == torch.Tensor(target)).all(dim=(1, 2))
+    matching_indices = torch.where(matches_mask)[0]
+    return matching_indices[0].item()

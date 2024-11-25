@@ -1,0 +1,8 @@
+{
+    "n": 4,
+    "pgen": 1,
+    "pswap": 1,
+    "lifetime": 6,
+    "init_entangled": 1,
+    "num_episodes": 10
+}

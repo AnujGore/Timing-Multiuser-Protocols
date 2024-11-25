@@ -67,9 +67,3 @@ Within each folder, the `.ipynb` file exists which instruct how each result was 
 ### License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
-==========================
-
-### Contact
-
-Anuj Gore - anujgore@gmail.com
