@@ -67,8 +67,16 @@ def generate_all_actions(n):
             action_matrix[j, j+2] = swap_request
         for i, ent_request in enumerate(arr[n-2:]):
             action_matrix[i, i+1] = ent_request
-        all_actions_as_matrix.append(action_matrix)
 
+        good_matrix = True
+        for node in range(len(action_matrix)):
+            arr = action_matrix[:, node]
+            if np.sum(arr) > 1:
+                good_matrix = False
+        
+        if good_matrix: 
+            all_actions_as_matrix.append(action_matrix)
+        
     return np.array(all_actions_as_matrix)
 
 
@@ -82,16 +90,23 @@ def generate_all_states(n, lifetime):
     Returns:
     np.ndarray: An array of `(n x n)` matrices, each representing a unique action configuration.
     """
-    repeat_val = sum([i for i in range(1, n)])
-    all_states_as_array = list(product(range(lifetime+1), repeat = repeat_val))
-    
+
+    all_possible_states_unfiltered = list(product(range(0, lifetime+1), repeat = sum([i for i in range(1, n)])))
     all_states_as_matrix = []
-    for arr in all_states_as_array:
+    for possible_state in all_possible_states_unfiltered:
         state_matrix = -1*np.ones(shape = (n, n))
         triu_indices = np.triu_indices(n, 1)
-        state_matrix[triu_indices] = np.array(arr)
-        all_states_as_matrix.append(_correct_state(state_matrix))
-    
+        state_matrix[triu_indices] = np.array(possible_state)
+        possible_state_matrix  = _correct_state(state_matrix)
+
+        good_matrix = True
+        for node in possible_state_matrix:
+            if np.sum(node > 0) > 2: #If the number of edges from a node is more than two we do not consider the state
+                good_matrix = False
+        
+        if good_matrix: 
+            all_states_as_matrix.append(possible_state_matrix)
+
     return np.array(all_states_as_matrix)
 
 def find_tensor(tensor, target):

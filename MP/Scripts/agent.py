@@ -6,13 +6,13 @@ import json
 hyperparameter_dict = json.load(open("MP/Scripts/model_config.json"))
 
 class Agent:
-    def __init__(self, n, lifetime):
+    def __init__(self, n, lifetime, all_actions_array, all_states_array):
         self.n = n
         self.lifetime = lifetime
 
-        self.all_states_tensor = torch.Tensor(generate_all_states(self.n, self.lifetime))
+        self.all_states_tensor = torch.Tensor(all_states_array)
 
-        self.all_actions_tensor = torch.Tensor(generate_all_actions(self.n))
+        self.all_actions_tensor = torch.Tensor(all_actions_array)
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -39,9 +39,7 @@ class Agent:
     
     def update(self, state, new_state, reward, action_idx):
         state_idx = find_tensor(self.all_states_tensor, state)
-        # state_idx = [key for key, arr in self.all_states_dict.items() if np.array_equal(state, arr)][0]
         new_state_idx = find_tensor(self.all_states_tensor, new_state)
-        # new_state_idx = [key for key, arr in self.all_states_dict.items() if np.array_equal(new_state, arr)][0]
         self.q_table[state_idx, action_idx] += hyperparameter_dict["learning_rate"]*[reward + 
                                                                                      hyperparameter_dict["discount_factor"]*
                                                                                      max(self.q_table[new_state_idx])-

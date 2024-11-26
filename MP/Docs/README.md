@@ -8,17 +8,22 @@ Here’s a brief overview of the structure of the ``MP`` folder:
 
 ```
 MP/
-├── Scripts/               
+├── Scripts/
+    ├── agent.py               
     ├── environment.py 
+    ├── model_config.json           # JSON file for the hyperparameters of the model
+    ├── simulation_config.json      # JSON file for the simulation parameters
     ├── train_model.py
-│   └── utils.py        # Utility functions for data processing
-│
-├── Docs/               # Documentation folder (this folder)
-│   └── README.md       # Overview of data generation
+    └── utils.py                    # Utility functions for data processing
+├── Outputs/                        # Folder to store the states and actions
+├── Docs/                           # Documentation folder (this folder)
+    └── README.md                   # Overview of data generation
 ```
 
 ### Key files
 
 1. ``environment.py``: In this file, we create the environment the protocols routing works by. We define the step function which transforms the state depending on the action provided and all the necessary functionality for a reinforcement learning environment.
 
-2. ``train_model.py``: In this file, we train the reinforcement learning agent.
+2. ``agent.py``: In this file, we create the agent which has the epsilon greedy algorithm and updates the q-table via the Q-algorithm presented in the [linked paper](https://arxiv.org/pdf/2303.00777). 
+
+3. ``train_model.py``: In this file, we train the reinforcement learning agent.

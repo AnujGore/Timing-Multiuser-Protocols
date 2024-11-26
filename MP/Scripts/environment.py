@@ -3,7 +3,7 @@ from utils import generate_initial_state, generate_all_actions, _correct_state, 
 import numpy as np
 
 class GridTopologyEnv(gym.Env):
-    def __init__(self, n: int, pgen, pswap, lifetime = np.inf, init_entangled = True):
+    def __init__(self, n: int, pgen, pswap, all_actions_array, all_states_array, wait = True, lifetime = np.inf, init_entangled = True):
         """
         Environment class for a chain of repeaters. 
 
@@ -19,16 +19,17 @@ class GridTopologyEnv(gym.Env):
         self.pgen = pgen
         self.pswap = pswap
         self.init_entangled = init_entangled
+        self.wait = wait
 
-        self.all_actions_dict = {}
-        for index, element in enumerate(generate_all_actions(self.n)):
-            self.all_actions_dict[index] = element
+        self.all_actions_array = all_actions_array
+        # for index, element in enumerate(generate_all_actions(self.n)):
+        #     self.all_actions_array[index] = element
 
-        self.all_states_dict = {}
-        for i, state in enumerate(generate_all_states(self.n, lifetime)):
-            self.all_states_dict[i] = state
+        self.all_states_array = all_states_array
+        # for i, state in enumerate(generate_all_states(self.n, lifetime)):
+        #     self.all_states_array[i] = state
 
-        self.action_space = gym.spaces.Discrete(len(self.all_actions_dict))  #Only upper (or lower) diagonal elements of the n x n matrix
+        self.action_space = gym.spaces.Discrete(len(self.all_actions_array))  #Only upper (or lower) diagonal elements of the n x n matrix
         self.observation_space = gym.spaces.Box(low=-2.0, high=np.inf,shape=(n, n),dtype=np.float32)
 
         self.agent_state = generate_initial_state(self.n, self.pgen, self.init_entangled)
@@ -41,13 +42,13 @@ class GridTopologyEnv(gym.Env):
         super().reset(seed=seed, options=options)
         
         
-        # self.agent_state = self.all_states_dict[np.random.randint(0, len(self.all_states_dict))].astype(np.float32)
+        # self.agent_state = self.all_states_array[np.random.randint(0, len(self.all_states_array))].astype(np.float32)
         self.agent_state = generate_initial_state(self.n, self.pgen, self.init_entangled).astype(np.float32)
 
         return self.agent_state, {}
 
     def step(self, action_idx):
-        action_matrix = self.all_actions_dict[action_idx]
+        action_matrix = self.all_actions_array[action_idx]
 
         # #Find which nodes need to swap
         nodes_to_swap = []
@@ -80,7 +81,9 @@ class GridTopologyEnv(gym.Env):
                     break     
 
                 #Make it's edge alive (set to 1.)
-                candidate_state[input_nodes[0], input_nodes[1]] = np.max(candidate_state[node_pos][input_nodes])     
+                candidate_state[input_nodes[0], input_nodes[1]] = np.max(candidate_state[node_pos][input_nodes])
+                # if not self.wait:
+                #       candidate_state[input_nodes[0], input_nodes[1]] += 1
 
                 #Remove edges from the initial edges
                 candidate_state[input_nodes[0], node_pos] = 0.             
@@ -97,14 +100,15 @@ class GridTopologyEnv(gym.Env):
                 if relevant_states[row, col] > 0.:
                     edges_to_wait.append((row, col))
 
-        #Make unused edges wait
-        for i, w in enumerate(edges_to_wait):
-            candidate_state[w[0], w[1]] += 1.
+        if self.wait:
+            #Make unused edges wait
+            for i, w in enumerate(edges_to_wait):
+                candidate_state[w[0], w[1]] += 1.
 
         #Kill old edges
         for row in range(self.n):
             for col in range(self.n):
-                if candidate_state[row, col] >= self.lifetime:
+                if candidate_state[row, col] > self.lifetime:
                     candidate_state[row, col] = 0.
                 
         #Entangled needed nodes
