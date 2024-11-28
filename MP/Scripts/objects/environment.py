@@ -1,9 +1,9 @@
 import gymnasium as gym
-from utils import generate_initial_state, generate_all_actions, _correct_state, generate_all_states
+from utils import generate_initial_state, reward_function, _correct_state 
 import numpy as np
 
 class GridTopologyEnv(gym.Env):
-    def __init__(self, n: int, pgen, pswap, all_actions_array, all_states_array, wait = True, lifetime = np.inf, init_entangled = True):
+    def __init__(self, n: int, pgen, pswap, all_actions_array, all_states_array, lifetime = np.inf, init_entangled = True):
         """
         Environment class for a chain of repeaters. 
 
@@ -19,31 +19,24 @@ class GridTopologyEnv(gym.Env):
         self.pgen = pgen
         self.pswap = pswap
         self.init_entangled = init_entangled
-        self.wait = wait
+        self.lifetime = lifetime
 
         self.all_actions_array = all_actions_array
-        # for index, element in enumerate(generate_all_actions(self.n)):
-        #     self.all_actions_array[index] = element
 
         self.all_states_array = all_states_array
-        # for i, state in enumerate(generate_all_states(self.n, lifetime)):
-        #     self.all_states_array[i] = state
 
         self.action_space = gym.spaces.Discrete(len(self.all_actions_array))  #Only upper (or lower) diagonal elements of the n x n matrix
         self.observation_space = gym.spaces.Box(low=-2.0, high=np.inf,shape=(n, n),dtype=np.float32)
 
-        self.agent_state = generate_initial_state(self.n, self.pgen, self.init_entangled)
+        self.agent_state = generate_initial_state(self.n, self.pgen, self.lifetime, self.init_entangled)
         self.current_state = self.agent_state
 
-        self.lifetime = lifetime
         
 
     def reset(self, *, seed = None, options = None):
         super().reset(seed=seed, options=options)
         
-        
-        # self.agent_state = self.all_states_array[np.random.randint(0, len(self.all_states_array))].astype(np.float32)
-        self.agent_state = generate_initial_state(self.n, self.pgen, self.init_entangled).astype(np.float32)
+        self.agent_state = generate_initial_state(self.n, self.pgen, self.lifetime, self.init_entangled).astype(np.float32)
 
         return self.agent_state, {}
 
@@ -68,7 +61,6 @@ class GridTopologyEnv(gym.Env):
         
         nodes_to_entangle = np.array(nodes_to_entangle)
 
-
         candidate_state = np.copy(self.agent_state)
 
         #Swap first
@@ -82,8 +74,6 @@ class GridTopologyEnv(gym.Env):
 
                 #Make it's edge alive (set to 1.)
                 candidate_state[input_nodes[0], input_nodes[1]] = np.max(candidate_state[node_pos][input_nodes])
-                # if not self.wait:
-                #       candidate_state[input_nodes[0], input_nodes[1]] += 1
 
                 #Remove edges from the initial edges
                 candidate_state[input_nodes[0], node_pos] = 0.             
@@ -100,10 +90,9 @@ class GridTopologyEnv(gym.Env):
                 if relevant_states[row, col] > 0.:
                     edges_to_wait.append((row, col))
 
-        if self.wait:
-            #Make unused edges wait
-            for i, w in enumerate(edges_to_wait):
-                candidate_state[w[0], w[1]] += 1.
+        #Make unused edges wait
+        for i, w in enumerate(edges_to_wait):
+            candidate_state[w[0], w[1]] += 1.
 
         #Kill old edges
         for row in range(self.n):
@@ -118,16 +107,26 @@ class GridTopologyEnv(gym.Env):
 
         self.agent_state = _correct_state(candidate_state).astype(np.float32)
 
-        terminated = self._is_final_state(self.agent_state)
-        reward = 1 if terminated else 0
+        terminated = self._is_final_state()
+        truncated = self._is_bad_state()
+
+        reward = reward_function(self.agent_state, terminated)
         observation = self.agent_state
 
-        return observation, reward, terminated, False, {}
+        return observation, reward, terminated, truncated, {}
 
-    def _is_final_state(self, arr):
-        if arr[0][-1] != 0 and arr[-1][0] != 0:
+    def _is_final_state(self):
+        if self.agent_state[0][-1] != 0 and self.agent_state[-1][0] != 0:
             return True
         return False
+    
+    def _is_bad_state(self):
+        bad_state = False
+        for node in self.agent_state:
+            if np.sum(node > 0) > 2:
+                bad_state = True
+        
+        return bad_state
 
 gym.register(
     id ='QuantumRepeaterGrid-v0',

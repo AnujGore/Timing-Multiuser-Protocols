@@ -1,18 +1,16 @@
 import numpy as np
-from rich.progress import track
 
-def train(env, agent, num_episodes, threshold_action):
+def test(env, agent, num_episodes, threshold_action):
     num_actions_arr = np.zeros(shape = num_episodes)
     reward_arr = np.zeros(shape = num_episodes)
 
-    for episode in track(range(num_episodes), description="Processing over episodes..."):
-    # for episode in range(num_episodes):
+    for episode in range(num_episodes):
         state, info = env.reset()
         done = False; truncated = False; elapsed = False
         actions_taken = 0; cumulative_reward = 0
 
         while not (done or truncated or elapsed):
-            action_idx = agent.act(state, learn = True)
+            action_idx = agent.act(state, learn = False)
             new_state, reward, done, truncated, info = env.step(action_idx)
             actions_taken += 1
             cumulative_reward+= reward
@@ -23,3 +21,5 @@ def train(env, agent, num_episodes, threshold_action):
 
         num_actions_arr[episode] = actions_taken
         reward_arr[episode] = cumulative_reward
+
+    return reward_arr.mean(), num_actions_arr.mean()

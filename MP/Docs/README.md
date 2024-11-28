@@ -9,15 +9,23 @@ Here’s a brief overview of the structure of the ``MP`` folder:
 ```
 MP/
 ├── Scripts/
-    ├── agent.py               
-    ├── environment.py 
-    ├── model_config.json           # JSON file for the hyperparameters of the model
-    ├── simulation_config.json      # JSON file for the simulation parameters
+    ├── objects/
+        ├── agent.py
+        └── environment.py
+    ├── config_files/
+        ├── simulation_config.json      # JSON file for the simulation parameters
+        └── model_config.json           # JSON file for the hyperparameters of the model
+    ├── sweep_for_hyperparameters.py
+    ├── test_model.py
+    ├── sweep.yaml
     ├── train_model.py
-    └── utils.py                    # Utility functions for data processing
-├── Outputs/                        # Folder to store the states and actions
-├── Docs/                           # Documentation folder (this folder)
-    └── README.md                   # Overview of data generation
+    └── utils.py                        # Utility functions for data processing
+├── Outputs/
+    ├── plot_results.py
+    ├── logs/
+        └── (Folder to store the states and actions)
+├── Docs/                               
+    └── README.md                       
 ```
 
 ### Key files
