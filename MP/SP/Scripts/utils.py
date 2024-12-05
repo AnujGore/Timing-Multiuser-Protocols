@@ -1,6 +1,8 @@
 import numpy as np
 from itertools import product
 from scipy import sparse
+from collections import deque
+import torch
 
 def map_to_routing(listOfRepeaters, n):
     node_labels = []
@@ -107,3 +109,28 @@ def label_to_coor(label:int, n:int):
 
 def hamming_distance(node1, node2):
     return int(np.abs(node1[0] - node2[0]) + np.abs(node1[1] - node2[1]))
+
+
+class ExperienceReplay:
+    def __init__(self, capacity):
+        self.buffer = deque(maxlen=capacity)
+
+    def store_experience(self, state, action, reward, new_state, terminated, truncated):
+        experience = (state, action, reward, new_state, terminated, truncated)
+        self.buffer.append(experience)
+
+    def sample_experience(self, batch_size):
+        indices = np.random.choice(len(self.buffer), size=batch_size, replace=False)
+        batch = [self.buffer[idx] for idx in indices]
+        return batch
+
+    def __len__(self):
+        return len(self.buffer)
+    
+def find_coo_matrix(target, total):
+    for i, m in enumerate(total):
+        if (np.array_equal(target.row, m.row) and
+            np.array_equal(target.col, m.col) and
+            np.array_equal(target.data, m.data)):
+            return i
+    

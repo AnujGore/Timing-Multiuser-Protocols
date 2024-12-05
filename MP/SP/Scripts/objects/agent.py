@@ -16,17 +16,21 @@ class DQN(nn.Module):
 
     def forward(self, x):
         #Consider only the entanglement layer
-        x = x[0]
+        x = x[:, 0, :, :]
 
         #Convert to tensor
         if torch.is_tensor(x):
             pass
         else:
-            x = torch.tensor(x, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+            x = torch.tensor(x)
+
+            
+        x = x.to(torch.float32).unsqueeze(0)
+        x = x.reshape((x.shape[1], x.shape[0], x.shape[2], x.shape[3]))
 
         x = F.relu(self.conv1(x))
         x = self.pool(x)
-        x = torch.flatten(x)
+        x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
@@ -38,6 +42,7 @@ class DQN(nn.Module):
 class AgentSP:
     def __init__(self, num_features, num_actions, epsilon):
         self.num_features = num_features
+        self.num_actions = num_actions
         self.qnn = DQN(num_actions, num_features)
         self.target_nn = DQN(num_actions, num_features)
         self.target_nn.load_state_dict(self.qnn.state_dict())
@@ -47,6 +52,6 @@ class AgentSP:
         if np.random.rand() < self.exploration_rate:
             action_idx = torch.argmax(self.qnn(state)).numpy()
         else:
-            pass
+            action_idx = np.random.randint(0, self.num_actions)
 
         return action_idx

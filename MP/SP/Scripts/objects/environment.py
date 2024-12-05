@@ -3,7 +3,7 @@ import numpy as np
 from utils import generate_initial_adjanency, label_to_coor, hamming_distance
 
 import json
-simulation_parameters = json.load(open("RepeaterGrid/SP/Scripts/config_files/simulation_config.json"))
+simulation_parameters = json.load(open("MP/SP/Scripts/config_files/simulation_config.json"))
 
 class GridTopologyEnv(gym.Env):
     def __init__(self, n: int, pgen, pswap, lifetime, action_space):
@@ -55,10 +55,15 @@ class GridTopologyEnv(gym.Env):
                     
                 if self.ent_procedure == "MeetInTheMiddle":
                     ent_request_matrix[action_coors[idx]] += 0.5
+                    
                 if np.random.rand() < self.pgen:
                     nodes_to_connect = action_coors[idx]
                     candidate_state[nodes_to_connect[0], nodes_to_connect[1]] = 1.
                     candidate_state[nodes_to_connect[1], nodes_to_connect[0]] = 1. 
+
+
+        #Kill old edges
+        candidate_state[candidate_state > self.lifetime] = 0. 
 
         self.agent_state = np.stack([candidate_state, swap_matrix, ent_request_matrix])
 
