@@ -14,12 +14,10 @@ def test(env, agent, num_episodes, threshold_action):
             new_state, reward, done, truncated, info = env.step(action_idx)
             actions_taken += 1
             cumulative_reward+= reward
-            agent.update(state, new_state, reward, action_idx, truncated)
             state = new_state
             if actions_taken >= threshold_action:
                 elapsed = True
 
         num_actions_arr[episode] = actions_taken
         reward_arr[episode] = cumulative_reward
-
-    return reward_arr.mean(), num_actions_arr.mean()
+    return num_actions_arr.mean()

@@ -1,6 +1,8 @@
 import numpy as np
 from itertools import product
 import torch
+from torch import nn
+from collections import namedtuple, deque
 
 def generate_initial_state(n, pgen, lifetime, init_entangled):
     """
@@ -136,19 +138,8 @@ def reward_function(state, done):
             return 0
         hamming_distance_x = np.abs(n-1 - coor[0])
         hamming_distance_y = np.abs(0 - coor[1])
-        hamming_distance = np.sqrt((hamming_distance_x)**2 + (hamming_distance_y)**2)
 
-        return 1/(np.amax(state)*hamming_distance)[0]
+        return 1/(np.amax(state)*(hamming_distance_x + hamming_distance_y + 1))[0]
         
     else:
         return 1/np.amax(state)
-    
-def converging(arr, threshold = 0.):
-    mean_arr = np.mean(arr)
-    max_dev = np.abs(max(arr)-mean_arr)
-    min_dev = np.abs(min(arr)-mean_arr)
-    var = max_dev-min_dev
-
-    if var <= threshold:
-        return True
-    return False

@@ -9,7 +9,6 @@ In this repository, we store and document all the resources necessary for quanti
 * Getting Started
 * Usage
 * License
-* Contact
 
 ==========================
 
@@ -26,19 +25,9 @@ Below we document the structure of the repository:
 ```
 root/
     ├── MP/
-        ├── Docs/
-            └── README.md
-        ├── Scripts/
-            └── utils.py
-    ├── ShortestPath/
-        ├── Docs/
-            └── README.md
-        ├── Scripts/
-            ├── analytical_solutions.py
-            ├── shortest_path.py
-            └── utils.py      
-        └── SP.ipynb
-
+        ├── SP/         # Look within folders for documentation 
+        ├── SP_chain/   # Look within folders for documentation 
+    ├── ShortestPath/   # Look within folders for documentation 
     ├── README.md       
     ├── LICENSE
     └── requirements.txt

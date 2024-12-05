@@ -2,8 +2,8 @@ import gymnasium as gym
 from utils import generate_initial_state, reward_function, _correct_state 
 import numpy as np
 
-class GridTopologyEnv(gym.Env):
-    def __init__(self, n: int, pgen, pswap, all_actions_array, all_states_array, lifetime = np.inf, init_entangled = True):
+class ChainTopologyEnv(gym.Env):
+    def __init__(self, n: int, pgen, pswap, all_actions_array, lifetime = np.inf, init_entangled = True):
         """
         Environment class for a chain of repeaters. 
 
@@ -22,8 +22,6 @@ class GridTopologyEnv(gym.Env):
         self.lifetime = lifetime
 
         self.all_actions_array = all_actions_array
-
-        self.all_states_array = all_states_array
 
         self.action_space = gym.spaces.Discrete(len(self.all_actions_array))  #Only upper (or lower) diagonal elements of the n x n matrix
         self.observation_space = gym.spaces.Box(low=-2.0, high=np.inf,shape=(n, n),dtype=np.float32)
@@ -129,6 +127,6 @@ class GridTopologyEnv(gym.Env):
         return bad_state
 
 gym.register(
-    id ='QuantumRepeaterGrid-v0',
-    entry_point=GridTopologyEnv
+    id ='QuantumRepeaterChain-v0',
+    entry_point=ChainTopologyEnv
     )

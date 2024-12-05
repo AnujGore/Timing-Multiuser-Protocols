@@ -1,12 +1,9 @@
-import numpy as np
-from rich.progress import track
+import json
+dqn_hyperparameter_dict = json.load(open("MP/Scripts/config_files/neural_net_config.json"))
+
 
 def train(env, agent, num_episodes, threshold_action):
-    num_actions_arr = np.zeros(shape = num_episodes)
-    reward_arr = np.zeros(shape = num_episodes)
-
-    for episode in track(range(num_episodes), description="Processing over episodes..."):
-    # for episode in range(num_episodes):
+    for episode in range(num_episodes):
         state, info = env.reset()
         done = False; truncated = False; elapsed = False
         actions_taken = 0; cumulative_reward = 0
@@ -20,6 +17,3 @@ def train(env, agent, num_episodes, threshold_action):
             state = new_state
             if actions_taken >= threshold_action:
                 elapsed = True
-
-        num_actions_arr[episode] = actions_taken
-        reward_arr[episode] = cumulative_reward

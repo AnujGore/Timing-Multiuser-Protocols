@@ -1,11 +1,16 @@
 import torch
+from torch import nn
 import numpy as np
-from utils import find_tensor
+from utils import find_tensor, linear_schedule, DQN
 
 import json
 hyperparameter_dict = json.load(open("MP/Scripts/config_files/model_config.json"))
+dqn_hyperparameter_dict = json.load(open("MP/Scripts/config_files/neural_net_config.json"))
 
-class Agent:
+epsilon_range = hyperparameter_dict["epsilon_range"]
+total_timesteps = hyperparameter_dict["num_episodes"]
+
+class QLearningSwapOptimizer:
     def __init__(self, n, lifetime, all_actions_array, all_states_array, exploration_rate = 1., learning_rate = 0.1, discount_factor = 0.95):
         self.n = n
         self.lifetime = lifetime
@@ -33,9 +38,6 @@ class Agent:
             state_idx = find_tensor(self.all_states_tensor, state)
             action_idx = torch.argmax(self.q_table[state_idx]).item()
 
-            # self.exploration_rate *= self.exploration_rate_decay
-            # self.exploration_rate = max(0.1, self.exploration_rate)
-
         return action_idx
     
     def update(self, state, new_state, reward, action_idx, truncation):
@@ -45,6 +47,4 @@ class Agent:
         else:
             state_idx = find_tensor(self.all_states_tensor, state)
             new_state_idx = find_tensor(self.all_states_tensor, new_state)
-            self.q_table[state_idx, action_idx] += self.learning_rate*[reward + 
-                                                                       self.discount_factor*max(self.q_table[new_state_idx]) -
-                                                                       self.q_table[state_idx, action_idx]][0].item()
+            self.q_table[state_idx, action_idx] += self.learning_rate*[reward + self.discount_factor*max(self.q_table[new_state_idx]) - self.q_table[state_idx, action_idx]][0].item()
