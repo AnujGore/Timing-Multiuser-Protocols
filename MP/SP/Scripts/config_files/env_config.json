@@ -1,0 +1,8 @@
+{
+    "n": 3,
+    "pgen": 0.5,
+    "pswap": 0.5,
+    "pfusion": 0.7,
+    "init_entangled": 1,
+    "Entanglement_procedure": "SenderReceiver"
+}
