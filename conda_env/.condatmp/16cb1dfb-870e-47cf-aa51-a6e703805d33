@@ -1,9 +1,0 @@
-Name: libecpg
-Description: PostgreSQL libecpg library
-Url: http://www.postgresql.org/
-Version: 12.17
-Requires: 
-Requires.private: libpq libpgtypes
-Cflags: -I/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include
-Libs: -L/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib -lecpg
-Libs.private: -L/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib -lpgcommon -lpgport -lm

@@ -1,9 +1,0 @@
-Name: libpq
-Description: PostgreSQL libpq library
-Url: http://www.postgresql.org/
-Version: 12.17
-Requires: 
-Requires.private: 
-Cflags: -I/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include
-Libs: -L/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib -lpq
-Libs.private: -L/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib -lpgcommon -lpgport -lssl -lcrypto -lgssapi_krb5 -lcrypt -lm

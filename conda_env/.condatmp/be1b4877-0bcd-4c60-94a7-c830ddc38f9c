@@ -1,9 +1,0 @@
-prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
-includedir=${prefix}/include
-libdir=${prefix}/lib
-
-Name: xkbcommon
-Description: XKB API common to servers and clients
-Version: 1.0.1
-Libs: -L${libdir} -lxkbcommon
-Cflags: -I${includedir}

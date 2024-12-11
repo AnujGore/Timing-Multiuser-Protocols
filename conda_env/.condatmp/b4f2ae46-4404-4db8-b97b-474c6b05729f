@@ -1,8 +1,0 @@
-#
-# Configuration file for using the xslt library
-#
-XSLT_LIBDIR="-L/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib"
-XSLT_LIBS="-lxslt -L/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib -lxml2 "
-XSLT_PRIVATE_LIBS="-lm"
-XSLT_INCLUDEDIR="-I/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include"
-MODULE_VERSION="xslt-1.1.37"
