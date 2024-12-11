@@ -1,0 +1,12 @@
+prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+exec_prefix=${prefix}
+libdir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib
+includedir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include
+
+Name: absl_common_policy_traits
+Description: Abseil common_policy_traits library
+URL: https://abseil.io/
+Version: 20240116
+Requires: absl_meta = 20240116
+Libs: -L${libdir}  
+Cflags: -I${includedir} -DNOMINMAX

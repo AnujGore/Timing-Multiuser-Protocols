@@ -1,0 +1,11 @@
+prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+exec_prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+libdir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib
+includedir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include
+
+Name: uuid
+Description: Universally unique id library
+Version: 2.32.1
+Requires:
+Cflags: -I${includedir}/uuid
+Libs: -L${libdir} -luuid

@@ -1,0 +1,9 @@
+Name: libecpg_compat
+Description: PostgreSQL libecpg_compat library
+Url: http://www.postgresql.org/
+Version: 12.17
+Requires: 
+Requires.private: libecpg libpgtypes
+Cflags: -I/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include
+Libs: -L/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib -lecpg_compat
+Libs.private: -L/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib -lpgcommon -lpgport -lpq -lm

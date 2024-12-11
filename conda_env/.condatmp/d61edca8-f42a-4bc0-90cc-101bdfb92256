@@ -1,0 +1,13 @@
+prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+exec_prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+libdir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib
+includedir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include
+datarootdir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/share
+datadir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/share
+
+Name: oniguruma
+Description: Regular expression library
+Version: 6.9.7
+Requires:
+Libs: -L${libdir} -lonig
+Cflags: -I${includedir}

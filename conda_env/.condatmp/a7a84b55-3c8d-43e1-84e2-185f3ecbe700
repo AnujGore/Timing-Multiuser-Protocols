@@ -1,0 +1,14 @@
+# libaom pkg-config.
+prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}//mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib
+
+Name: aom
+Description: Alliance for Open Media AV1 codec library v3.6.0.
+Version: 3.6.0
+Requires:
+Conflicts:
+Libs: -L${libdir} -laom
+Libs.private: -lm -lpthread
+Cflags: -I${includedir}

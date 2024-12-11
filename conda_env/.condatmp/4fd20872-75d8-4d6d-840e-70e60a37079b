@@ -1,0 +1,13 @@
+prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+sharedlibdir=${libdir}
+includedir=${prefix}/include
+
+Name: zlib-ng
+Description: zlib-ng compression library
+Version: 2.0.7
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz-ng
+Cflags: -I${includedir}

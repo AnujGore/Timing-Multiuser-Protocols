@@ -163,7 +163,12 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+*.txt
+*.npy
+*.pth
 plotting.py
 wandb/
 sweep_for_hyperparameters.py
 sweep_for_hyperparameters_ray.py
+AnalyticalSolution/
+SP_chain/

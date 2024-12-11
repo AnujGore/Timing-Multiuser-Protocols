@@ -1,0 +1,5 @@
+[Paths]
+Prefix = /mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+Binaries = /mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/bin
+Libraries = /mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib
+Headers = /mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include/qt

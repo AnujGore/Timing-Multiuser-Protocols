@@ -1,9 +1,11 @@
 {
-    "n": 3,
-    "pgen": 0.5,
-    "pswap": 0.5,
-    "pfusion": 0.7,
-    "lifetime": 3,
-    "init_entangled": 1,
-    "Entanglement_procedure": "SenderReceiver"
+    "total_timesteps": 1000,
+    "buffer_size": 100,
+    "training_starts": 100,
+    "max_actions_taken": 30, 
+    "target_network_update_freq": 50,
+    "batch_size": 32,
+    "training_frequency": 4,
+    "evaluate_after": 50,
+    "eval_episodes": 100
 }

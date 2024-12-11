@@ -1,0 +1,13 @@
+prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+exec_prefix=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env
+libdir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib
+sharedlibdir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/lib
+includedir=/mnt/ong_share/Anuj/Timing-Multiuser-Protocols/conda_env/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.13
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

@@ -1,7 +1,6 @@
 {
-    "experience_replay_size": 10,
-    "epsilon": 1.0,
-    "gamma": 0.8,
+    "hidden_layers": [256, 128, 64],
+    "dropout_rate": 0.6,
     "learning_rate": 0.001,
-    "transfer_after": 2
+    "num_features": 32
 }
