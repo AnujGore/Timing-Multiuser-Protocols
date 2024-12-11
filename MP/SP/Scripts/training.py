@@ -1,6 +1,12 @@
 import numpy as np
 import tyro
+import tyro
 import torch
+
+from utils.model_utils import linear_schedule, evaluate, ExperienceReplay
+from utils.SP_path_utils import generate_all_actions
+
+from objects.agent import DQN
 
 from utils.model_utils import linear_schedule, evaluate, ExperienceReplay
 from utils.SP_path_utils import generate_all_actions
@@ -9,10 +15,14 @@ from objects.agent import DQN
 
 import json
 env_parameters = json.load(open("MP/SP/Scripts/config_files/env_config.json")) 
+env_parameters = json.load(open("MP/SP/Scripts/config_files/env_config.json")) 
 simulation_parameters = json.load(open("MP/SP/Scripts/config_files/simulation_config.json"))
 model_hyperparameters = json.load(open("MP/SP/Scripts/config_files/model_config.json"))
 
 from rich.progress import Progress
+
+n = env_parameters["n"]
+from rich.progress import track
 
 n = env_parameters["n"]
 
@@ -109,33 +119,28 @@ def train_agent(env, agent, Args):
                 if step % args.copy_to_target == 0:
                     agent.target_nn.load_state_dict(agent.qnn.state_dict())
 
-                if step % args.eval_freq == 0:
-                    task2 = progress.add_task("[green]Evaluating...", total = args.eval_episodes)
-                    torch.save(agent.qnn.state_dict(), f"MP/SP/Outputs/model_paths/qNet_{n}_nodes.pth")
-                    eval_rewards = np.zeros(shape = args.eval_episodes)
-                    eval_actions_taken = np.zeros(shape = args.eval_episodes)
-                    for e in range(args.eval_episodes):
-                        actions_taken, reward = evaluate(
-                            model_path = f"MP/SP/Outputs/model_paths/qNet_{n}_nodes.pth",
-                            env = env,
-                            model = DQN,
-                            args = args,
-                            device = device,
-                            epsilon = epsilon, 
-                            all_actions= all_actions
-                        )
-                        eval_actions_taken[e] = actions_taken
-                        eval_rewards[e] = reward
-                        progress.update(task2, advance=1)
+            if step % args.eval_freq == 0:
+                torch.save(agent.qnn.state_dict(), f"MP/SP/Outputs/model_paths/qNet_{n}_nodes.pth")
+                eval_rewards = np.zeros(shape = args.eval_episodes)
+                eval_actions_taken = np.zeros(shape = args.eval_episodes)
+                for e in range(args.eval_episodes):
+                    actions_taken, reward = evaluate(
+                        model_path = f"MP/SP/Outputs/model_paths/qNet_{n}_nodes.pth",
+                        env = env,
+                        model = DQN,
+                        args = args,
+                        device = device,
+                        epsilon = epsilon, 
+                        all_actions= all_actions
+                    )
+                    eval_actions_taken[e] = actions_taken
+                    eval_rewards[e] = reward
 
-                    total_rewards.append(np.mean(eval_rewards))
-                    total_rewards_std.append(np.std(eval_rewards))
+                total_rewards.append(np.mean(eval_rewards))
+                total_rewards_std.append(np.std(eval_rewards))
 
-                    total_actions_needed.append(np.mean(eval_actions_taken))
-                    total_actions_needed_std.append(np.std(eval_actions_taken))
-
-                    progress.remove_task(task2)
-                
+                total_actions_needed.append(np.mean(eval_actions_taken))
+                total_actions_needed_std.append(np.std(eval_actions_taken))
 
     return total_rewards, total_rewards_std, total_actions_needed, total_actions_needed_std
 

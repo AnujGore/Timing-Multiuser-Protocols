@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
     "total_timesteps": 1000,
     "buffer_size": 100,
     "training_starts": 100,
@@ -8,4 +9,19 @@
     "training_frequency": 4,
     "evaluate_after": 50,
     "eval_episodes": 100
+=======
+    "total_timesteps": 10000,
+    "buffer_size": 1000,
+    "gamma": 0.99,
+    "target_network_update_freq": 1000,
+    "batch_size": 32,
+    "start_e": 1.0,
+    "end_e": 0.01,
+    "e_fraction": 0.1, 
+    "training_starts": 1000,
+    "training_frequency": 4,
+    "evaluate_after": 500,
+    "eval_episodes": 100,
+    "max_actions_taken": 1000 
+>>>>>>> 7c64a96cc787a572434c5f0158b53b10263e6451
 }

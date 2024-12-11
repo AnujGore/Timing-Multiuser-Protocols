@@ -15,9 +15,15 @@ def find_coo_matrix(target, total):
             return i
         
 
+<<<<<<< HEAD
 def evaluate(model_path, env, model, args, config, device, all_actions):
 
     eval_model = model(len(all_actions), config.num_features, dropout_rate = config.dropout_rate, hidden_layers = config.hidden_layers)
+=======
+def evaluate(model_path, env, model, args, device, epsilon, all_actions):
+
+    eval_model = model(len(all_actions), args.num_features, dropout_rate = args.dropout_rate, hidden_layers = args.hidden_layers)
+>>>>>>> 7c64a96cc787a572434c5f0158b53b10263e6451
     eval_model.load_state_dict(torch.load(model_path, weights_only = False))
     eval_model.to(device = device)
     eval_model.eval()
@@ -27,8 +33,16 @@ def evaluate(model_path, env, model, args, config, device, all_actions):
     done = False; truncated = False; elapsed = False
     actions_taken = 0
     while not(done or truncated or elapsed):
+<<<<<<< HEAD
         q_values = eval_model(state, batches = False)
         action_id = torch.argmax(q_values).numpy()
+=======
+        if np.random.rand() < epsilon:
+            action_id = np.random.randint(0, len(all_actions))
+        else:
+            q_values = eval_model(state, batches = False)
+            action_id = torch.argmax(q_values).numpy()
+>>>>>>> 7c64a96cc787a572434c5f0158b53b10263e6451
         
         action = all_actions[action_id]
         next_state, reward, done, truncated, _ = env.act(action)
