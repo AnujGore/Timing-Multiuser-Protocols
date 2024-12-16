@@ -1,10 +1,6 @@
 import numpy as np
 import math
 
-from .utils import decompose_into_powers
-
-from scipy.sparse import kron, csc_matrix
-
 def generate_tpm(N, p, a):
     """
     Generates the probability transition matrix for a Markov chain with N segments based on Shchukin et al.

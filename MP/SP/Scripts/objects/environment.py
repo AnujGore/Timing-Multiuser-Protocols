@@ -3,8 +3,7 @@ import numpy as np
 
 from scipy import sparse
 
-from utils.general_utils import label_to_coor, hamming_distance
-from utils.model_utils import reward_function
+from utils.env_utils import shortest_path, label_to_coor, hamming_distance
 
 import json
 env_parameters = json.load(open("MP/SP/Scripts/config_files/env_config.json"))
@@ -16,8 +15,9 @@ class GridTopologyEnv(gym.Env):
         self.pswap = pswap
 
         self.ent_procedure = env_parameters["Entanglement_procedure"]
+        self.init_ent = env_parameters["Initially_entangled"]
 
-        self.user_loc = np.array([0, n-1, 2*n-1, n**2 - 1])
+        self.user_loc = np.array([0, n-1, 2*n, n**2 - 1])
         self.cn_loc = int(n*np.floor(n/2) + np.floor(n/2))
 
         self.action_space = gym.spaces.Discrete(action_space)
@@ -25,8 +25,10 @@ class GridTopologyEnv(gym.Env):
 
     def reset(self):
         #Initialize adjancency and life matrices
-        adjacency = np.zeros(shape = (3, self.n**2, self.n**2))
-        self.agent_state = adjacency
+        self.agent_state  = np.zeros(shape = (4, self.n**2, self.n**2))
+        if self.init_ent:
+            self.agent_state = shortest_path(self.n, self.user_loc, self.cn_loc, self.pgen, self.agent_state)
+
         return self.agent_state, {}
     
     def act(self, action):
@@ -35,8 +37,11 @@ class GridTopologyEnv(gym.Env):
         action_coors = [(action.row[i], action.col[i]) for i in range(action_to_do.size)]
 
         adjacency_matrix = np.copy(self.agent_state[0]) #Store entanglement matrix
-        entanglement_matrix = np.copy(self.agent_state[1])
-        swap_matrix = np.copy(self.agent_state[2])
+        age_matrix = np.copy(self.agent_state[1])
+        entanglement_matrix = np.copy(self.agent_state[2])
+        swap_matrix = np.copy(self.agent_state[3])
+
+        new_edges = []
 
         for idx, a in enumerate(action_to_do):
             #Simulate entanglement
@@ -66,6 +71,10 @@ class GridTopologyEnv(gym.Env):
                     adjacency_matrix[nodes_to_entangle[0], nodes_to_entangle[1]] = 1.
                     adjacency_matrix[nodes_to_entangle[1], nodes_to_entangle[0]] = 1.
 
+                    age_matrix[nodes_to_entangle[0], nodes_to_entangle[1]] = 1
+                    age_matrix[nodes_to_entangle[1], nodes_to_entangle[0]] = 1
+                    new_edges.append((nodes_to_entangle[0], nodes_to_entangle[1]))
+
             #Simulate swap
             if a == 2:
 
@@ -82,6 +91,16 @@ class GridTopologyEnv(gym.Env):
                     if np.random.rand() < self.pswap:
                         adjacency_matrix[nodes_to_connect[0], nodes_to_connect[1]] = 1.
                         adjacency_matrix[nodes_to_connect[1], nodes_to_connect[0]] = 1.
+
+                        age_matrix[nodes_to_connect[0], nodes_to_connect[1]] = max(
+                            age_matrix[nodes_to_connect[0], node_to_swap[0]],
+                            age_matrix[nodes_to_connect[1], node_to_swap[0]]
+                        ) - 1
+
+                        age_matrix[nodes_to_connect[1], nodes_to_connect[0]] = max(
+                            age_matrix[nodes_to_connect[0], node_to_swap[0]],
+                            age_matrix[nodes_to_connect[1], node_to_swap[0]]
+                        ) - 1
                     
                     #Regardless of swap or not, we remove the connected links
                     adjacency_matrix[node_to_swap[0], nodes_to_connect[0]] = 0.
@@ -89,13 +108,23 @@ class GridTopologyEnv(gym.Env):
                     adjacency_matrix[nodes_to_connect[0], node_to_swap[0]] = 0.
                     adjacency_matrix[nodes_to_connect[1], node_to_swap[0]] = 0.
 
-        self.agent_state = np.stack([adjacency_matrix, entanglement_matrix, swap_matrix])
+        new_edges = np.array(new_edges, dtype=np.int64)
+        non_zero_edges = np.array(np.triu(age_matrix).nonzero()).T
+
+        new_edges_set = set([tuple(i) for i in new_edges.tolist()])
+        non_zero_edges_set = set([tuple(i) for i in non_zero_edges.tolist()])
+        waited_edges = np.array(list(non_zero_edges_set-new_edges_set))
+
+        if waited_edges.size != 0:
+            age_matrix[waited_edges[:, 0], waited_edges[:, 1]] +=1
+            age_matrix[waited_edges[:, 1], waited_edges[:, 0]] +=1
+
+        self.agent_state = np.stack([adjacency_matrix, age_matrix, entanglement_matrix, swap_matrix])
 
         observation = self.agent_state
-        # reward = 1. if self._is_final_state() else 0.
         terminated = self._is_final_state()
         truncated = self._is_bad_state()
-        reward = reward_function(terminated, truncated, self.agent_state, self.pgen, self.pswap)
+        reward = 1 if terminated else 0
         
         return observation, reward, terminated, truncated, {}
 

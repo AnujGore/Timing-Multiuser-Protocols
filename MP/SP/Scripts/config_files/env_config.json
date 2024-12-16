@@ -1,8 +1,8 @@
 {
-    "n": 3,
-    "pgen": 0.5,
-    "pswap": 0.5,
+    "n": 4,
+    "pgen": 0.3,
+    "pswap": 0.8,
     "pfusion": 0.7,
-    "init_entangled": 1,
-    "Entanglement_procedure": "SenderReceiver"
+    "Entanglement_procedure": "SenderReceiver",
+    "Initially_entangled": 1
 }

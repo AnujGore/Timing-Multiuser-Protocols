@@ -15,15 +15,9 @@ def find_coo_matrix(target, total):
             return i
         
 
-<<<<<<< HEAD
-def evaluate(model_path, env, model, args, config, device, all_actions):
+def evaluate(model_path, env, model, model_config, device, all_actions, max_actions_taken):
 
-    eval_model = model(len(all_actions), config.num_features, dropout_rate = config.dropout_rate, hidden_layers = config.hidden_layers)
-=======
-def evaluate(model_path, env, model, args, device, epsilon, all_actions):
-
-    eval_model = model(len(all_actions), args.num_features, dropout_rate = args.dropout_rate, hidden_layers = args.hidden_layers)
->>>>>>> 7c64a96cc787a572434c5f0158b53b10263e6451
+    eval_model = model(env.n, len(all_actions), model_config.num_features, dropout_rate = model_config.dropout_rate, hidden_layers = model_config.hidden_layers)
     eval_model.load_state_dict(torch.load(model_path, weights_only = False))
     eval_model.to(device = device)
     eval_model.eval()
@@ -33,22 +27,16 @@ def evaluate(model_path, env, model, args, device, epsilon, all_actions):
     done = False; truncated = False; elapsed = False
     actions_taken = 0
     while not(done or truncated or elapsed):
-<<<<<<< HEAD
-        q_values = eval_model(state, batches = False)
+        q_values = eval_model(torch.tensor(state[1]).unsqueeze(0).unsqueeze(0).to(torch.float32))
         action_id = torch.argmax(q_values).numpy()
-=======
-        if np.random.rand() < epsilon:
-            action_id = np.random.randint(0, len(all_actions))
-        else:
-            q_values = eval_model(state, batches = False)
-            action_id = torch.argmax(q_values).numpy()
->>>>>>> 7c64a96cc787a572434c5f0158b53b10263e6451
         
         action = all_actions[action_id]
-        next_state, reward, done, truncated, _ = env.act(action)
+        next_state, _, done, truncated, _ = env.act(action)
+        reward = reward_function(done, truncated, actions_taken)
+
         actions_taken +=1
 
-        if actions_taken > args.max_actions_taken:
+        if actions_taken >= max_actions_taken:
             elapsed = True
 
         state=  next_state
@@ -99,15 +87,12 @@ class ExperienceReplay:
 
     def __len__(self):
         return len(self.buffer)
-    
+     
 
-def reward_function(done: bool, truncated: bool, state, pgen, pswap):
+def reward_function(done: bool, truncated: bool, actions_taken):
     if done:
-        ent_attempts = np.amax(state[1])
-        swap_attempts = np.amax(state[2])
-        return min(1.0, (4*(1/pgen) + 1*(1/pswap))/(ent_attempts + swap_attempts))
+        return 100 - actions_taken
     if truncated:
-        return -1
+        return -100
     else:
-        return 0
-    
+        return -1

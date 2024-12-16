@@ -3,7 +3,7 @@ import pprint
 
 sweep_config = {
     "name": "hyperparameter_swap",
-    "method": "bayes",
+    "method": "random",
     "metric": {"name": "reward", "goal": "maximize"},
     "parameters": {
         "hidden_layers": {
@@ -59,14 +59,14 @@ sweep_config = {
 
 sweep_id = wandb.sweep(sweep_config, project="sp-rl-sweep")
 
-from utils.model_utils import evaluate
+from utils.model_utils import evaluate, ExperienceReplay
 from objects.agent import AgentSP, DQN
 from objects.environment import GridTopologyEnv
-from utils.model_utils import ExperienceReplay, linear_schedule
+from utils.general_utils import generate_all_actions
 import torch
 import json
 import numpy as np
-from utils.SP_path_utils import generate_all_actions
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -119,7 +119,6 @@ def sweep_params(config = None):
         state, _ = myEnv.reset()
 
         for step in range(args.total_timesteps):
-            # epsilon = linear_schedule(0.99, 0.01, config.epsilon*args.total_timesteps, step)
             epsilon = config.epsilon
             if np.random.rand() < epsilon:
                 action_id = np.random.randint(0, len(all_actions))
@@ -178,7 +177,7 @@ def sweep_params(config = None):
 
                     total_rewards.append(np.mean(eval_rewards))
             
-        wandb.log({"reward": np.mean(total_rewards)})
+        wandb.log({"reward": total_rewards[-1]})
 
 
 wandb.agent(sweep_id, sweep_params, count = 200)
