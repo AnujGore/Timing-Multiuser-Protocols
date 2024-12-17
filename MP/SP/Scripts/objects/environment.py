@@ -1,34 +1,25 @@
 import gymnasium as gym
 import numpy as np
-
 from scipy import sparse
-
-from utils.env_utils import shortest_path, label_to_coor, hamming_distance
-
-import json
-env_parameters = json.load(open("MP/SP/Scripts/config_files/env_config.json"))
+from utils.env_utils import label_to_coor, hamming_distance
 
 class GridTopologyEnv(gym.Env):
-    def __init__(self, n: int, pgen, pswap, action_space):
+    def __init__(self, n: int, pgen, pswap, **kwargs):
         self.n = n
         self.pgen = pgen
         self.pswap = pswap
 
-        self.ent_procedure = env_parameters["Entanglement_procedure"]
-        self.init_ent = env_parameters["Initially_entangled"]
+        self.ent_procedure = "SenderReceiver" if kwargs["ent_procedure"] is None else kwargs["ent_procedure"]
 
         self.user_loc = np.array([0, n-1, 2*n, n**2 - 1])
         self.cn_loc = int(n*np.floor(n/2) + np.floor(n/2))
 
-        self.action_space = gym.spaces.Discrete(action_space)
+        self.action_space = gym.spaces.Box(low = 0.0, high = 2.0, shape = (n**2, n**2), dtype=np.float32)
         self.observation_space = gym.spaces.Box(low = -2.0, high = np.inf, shape = (3, n**2, n**2), dtype = np.float32)
 
     def reset(self):
         #Initialize adjancency and life matrices
         self.agent_state  = np.zeros(shape = (4, self.n**2, self.n**2))
-        if self.init_ent:
-            self.agent_state = shortest_path(self.n, self.user_loc, self.cn_loc, self.pgen, self.agent_state)
-
         return self.agent_state, {}
     
     def act(self, action):
