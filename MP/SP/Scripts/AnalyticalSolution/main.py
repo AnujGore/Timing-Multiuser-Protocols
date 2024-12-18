@@ -1,42 +1,29 @@
 from analytical import *
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
+from adjacency_analytical import MonteCarloSP
 
-pgen = 0.01
-pswap = 0.596
-pfusion = 1.0
+def match_analytical(n, diff_mat):
+    p = np.linspace(0.1, 0.9, 100)
+    q = np.linspace(0.1, 0.9, 100)
+    for i, pgen in enumerate(p):
+        for j, pswap in enumerate(q):
+            #published solution
+            if n == 3:
+                pub_sol = two_segment_solution(pgen, pswap, "entanglement")
+            elif n == 4:
+                pub_sol = three_segment_solution(pgen, pswap, "entanglement")
+            elif n == 5:
+                pub_sol = n_segment_solution(n-1, pgen, pswap)
 
-x = [2, 3, 4, 8]
-y = []
-for n in x:
-    if n == 2:
-        y.append((1/pfusion)*two_segment_solution(pgen, pswap, "entanglement")[0])
-    elif n == 3:
-        y.append((1/pfusion)*three_segment_solution(pgen, pswap, "entanglement")[0])
-    else:
-        y.append((1/pfusion)*n_segment_solution(n, pgen, pswap)[0])
+            #our solution
+            print(f"pgen: {pgen}; pswap: {pswap}; segments: {n-1}")
+            our_sol = MonteCarloSP(3, pgen, pswap, "SenderReceiver")
+
+            diff_mat[i, j] = np.abs(pub_sol[0] - our_sol[0].numpy())
+
+    return diff_mat
 
 
-x2 = [2, 3]
-y2 = []
-for n in x2:
-    if n == 2:
-        y2.append((1/pfusion)*two_segment_solution(pgen, pswap, "swap")[0])
-    elif n == 3:
-        y2.append((1/pfusion)*three_segment_solution(pgen, pswap, "swap")[0])
-
-plt.figure(figsize=(8, 6))
-
-# Plot first function output
-plt.scatter(x, y, color='hotpink', label = r"Analytical Solution ($\epsilon$)")
-plt.plot(x, y, color='hotpink', linestyle = "dashed")
-plt.scatter(x2, y2, color='blue', label = r"Analytical Solution ($\sigma$)")
-plt.plot(x2, y2, color='blue', linestyle = "dashed")
-# Labels and legend
-plt.xticks(x, list(map(lambda x: r"{n} $\times$ {n}".format(n = x +1), x)))
-plt.xlabel(r'Grid Size')
-plt.ylabel(r'Latency')
-plt.grid(True)
-plt.legend(loc = "best")
-plt.show()
+for n in [3, 4, 5]:
+    diff_mat = np.zeros(shape = (100, 100))
+    diff_mat = match_analytical(n, diff_mat)
+    np.savetxt(f"different_matrix_{n-1}_seg.txt", diff_mat)

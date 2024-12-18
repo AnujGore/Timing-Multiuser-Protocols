@@ -9,7 +9,9 @@ class GridTopologyEnv(gym.Env):
         self.pgen = pgen
         self.pswap = pswap
 
-        self.ent_procedure = "SenderReceiver" if kwargs["ent_procedure"] is None else kwargs["ent_procedure"]
+        self.ent_procedure = kwargs["ent_procedure"]
+
+        self.age_limit = kwargs["age_limit"]
 
         self.user_loc = np.array([0, n-1, 2*n, n**2 - 1])
         self.cn_loc = int(n*np.floor(n/2) + np.floor(n/2))
@@ -109,6 +111,15 @@ class GridTopologyEnv(gym.Env):
         if waited_edges.size != 0:
             age_matrix[waited_edges[:, 0], waited_edges[:, 1]] +=1
             age_matrix[waited_edges[:, 1], waited_edges[:, 0]] +=1
+
+
+        #Kill old edges
+        if self.age_limit is not None:
+            dead_links_rows = np.where(age_matrix > self.age_limit)[0]
+            dead_links_cols = np.where(age_matrix > self.age_limit)[1]
+
+            adjacency_matrix[dead_links_rows, dead_links_cols] = 0
+            age_matrix[dead_links_rows, dead_links_cols] = 0
 
         self.agent_state = np.stack([adjacency_matrix, age_matrix, entanglement_matrix, swap_matrix])
 
