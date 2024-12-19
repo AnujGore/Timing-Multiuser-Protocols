@@ -74,52 +74,55 @@ class Agent:
 
         self.edge_action_model = DualWeightsNet(n**2, kwargs["hidden_dims"], n**2)
         self.node_action_model = DualWeightsNet(n**2, kwargs["hidden_dims"], n**2)
-        self.repeater_decision_tensor = torch.nn.Parameter(torch.rand(n**2))
-        self.cn_decision_tensor = torch.nn.Parameter(torch.rand(1))
-
-        a = torch.rand(n**2, requires_grad=True)
-        self.swap_parameter = torch.diag(a)
 
         self.rng = torch.arange(0, n**2)
 
-        self.softmaxer_col = torch.nn.Softmax(dim = 1)
-        self.softmaxer_row = torch.nn.Softmax(dim = 0)
-        self.softmaxer = torch.nn.Softmax()
+        self.softmaxer = torch.nn.Softmax(dim = 0)
 
         self.cn_loc = int(np.floor(n**2/2))
         self.user_loc = np.array([0, n-1, n**2-1, n**2 - n - 1])
 
 
     def predict_action(self, state):
-        edge_actions = torch.abs(torch.mul(self.edge_action_model(state), self.lattice_adj)) #To get rid of edge interactions which do not exist
-        node_actions = torch.diag(self.node_action_model(state)[self.rng, self.rng]) #To get rid of edge interactions which do not exist
+        edge_action_tensor = torch.abs(torch.mul(self.edge_action_model(state), self.lattice_adj)) #To get rid of edge interactions which do not exist
+        node_action_tensor = torch.diag(self.node_action_model(state)[self.rng, self.rng]) #To get rid of edge interactions which do not exist
 
-        action_mat = edge_actions + node_actions
-        action_mat = correct_action(action_mat, self.n)
+        edge_loc = torch.where(self.lattice_adj == 1)
+
+        all_probabilities = torch.cat([node_action_tensor[self.rng, self.rng], edge_action_tensor[edge_loc[0], edge_loc[1]]])
+        all_probabilities = self.softmaxer(all_probabilities)
         
-        for node in self.rng:
-            if node in self.user_loc:
-                action_mat[node, torch.argmax(action_mat[node])] = 1.
-            elif node == self.cn_loc:
-                if self.cn_decision_tensor < 0.2:
-                    action_mat[node, :] = 0
-                    action_mat[:, node] = 0
-                elif 0.2 <= self.cn_decision_tensor < 0.4:
-                    action_mat[node, torch.argmax(action_mat[node])] = 1. 
+        prob_swap = torch.diag(all_probabilities[:self.n**2])
 
+        prob_entangle_tensor = torch.zeros(size=(self.n**2, self.n**2))
+        prob_entangle_tensor[edge_loc[0], edge_loc[1]] = all_probabilities[self.n**2:]
+        prob_entangle_tensor = torch.triu(prob_entangle_tensor)
 
-def correct_action(action, n):
-    cn_loc = int(np.floor(n**2/2))
-    user_loc = np.array([0, n-1, n**2-1, n**2 - n - 1])
+        prob_action_tensor = prob_swap + prob_entangle_tensor
 
-    action[cn_loc, cn_loc] = 0
-    action[user_loc, user_loc] = 0
+        action_tensor = torch.zeros_like(prob_action_tensor)
 
-    return action
+        for i in range(prob_action_tensor.size(0)):
+            diagonal_value = prob_action_tensor[i, i]
+            off_diagonal_values = prob_action_tensor[i, :].clone()
+            off_diagonal_values[i] = float('-inf')
 
+            max_off_diagonal_value = off_diagonal_values.max()
+            max_off_diagonal_index = off_diagonal_values.argmax()
 
-
-n = 3
-test_state = torch.zeros(size=(n**2, n**2))
-myAgent = Agent(n, hidden_dims = [64, 32, 16])
-myAgent.predict_action(test_state)
+            # To repeat or not to repeat; that is the question
+            if diagonal_value >= max_off_diagonal_value:
+                if i == self.cn_loc:
+                    pass
+                elif i in self.user_loc:
+                    pass
+                else:
+                    action_tensor[i, :] = 0  
+                    action_tensor[:, i] = 0  
+                    action_tensor[i, i] = 2 
+            else:
+                action_tensor[i, max_off_diagonal_index] = 1
+                action_tensor[max_off_diagonal_index, i] = 1  
+                action_tensor[i, i] = 0  
+        
+        return action_tensor

@@ -1,29 +1,48 @@
-from analytical import *
-from adjacency_analytical import MonteCarloSP
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 
-def match_analytical(n, diff_mat):
-    p = np.linspace(0.1, 0.9, 100)
-    q = np.linspace(0.1, 0.9, 100)
-    for i, pgen in enumerate(p):
-        for j, pswap in enumerate(q):
-            #published solution
-            if n == 3:
-                pub_sol = two_segment_solution(pgen, pswap, "entanglement")
-            elif n == 4:
-                pub_sol = three_segment_solution(pgen, pswap, "entanglement")
-            elif n == 5:
-                pub_sol = n_segment_solution(n-1, pgen, pswap)
+# Load matrices from text files
+matrix1 = np.loadtxt(r'MP\SP\Scripts\AnalyticalSolution\different_matrix_2_seg.txt')
+matrix2 = np.loadtxt(r'MP\SP\Scripts\AnalyticalSolution\different_matrix_3_seg.txt')
+matrix3 = np.loadtxt(r'MP\SP\Scripts\AnalyticalSolution\different_matrix_4_seg.txt')
 
-            #our solution
-            print(f"pgen: {pgen}; pswap: {pswap}; segments: {n-1}")
-            our_sol = MonteCarloSP(3, pgen, pswap, "SenderReceiver")
+# Create a figure with subplots
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
-            diff_mat[i, j] = np.abs(pub_sol[0] - our_sol[0].numpy())
+vmin = min(matrix1.min(), matrix2.min(), matrix3.min())
+vmax = max(matrix1.max(), matrix2.max(), matrix3.max())
 
-    return diff_mat
+# Plot each matrix
+cax1 = axes[0].imshow(matrix1, cmap='GnBu', aspect='auto', vmin = vmin, vmax = vmax)
+axes[0].set_title('2 segments')
+cax2 = axes[1].imshow(matrix2, cmap='GnBu', aspect='auto', vmin = vmin, vmax = vmax)
+axes[1].set_title('3 segments')
+cax3 = axes[2].imshow(matrix3, cmap='GnBu', aspect='auto', vmin = vmin, vmax = vmax)
+axes[2].set_title('4 segments')
+
+# Add a common colorbar
+
+swap_loc = np.where(np.round(np.linspace(0.1, 0.9, 25), 2) == 0.6)
+
+x_ticks = np.arange(0, 25, step=1)
+y_ticks = np.arange(0, 25, step=1)
+
+# Apply the common ticks
+for ax in axes:
+    ax.plot([-1, 25], [swap_loc[0]-1, swap_loc[0]-1], 'r--', alpha=0.75)
+    ax.set_xlim(0, 24)
+    ax.set_ylim(0, 24)
+    ax.set_xticks(x_ticks, np.round(np.linspace(0.1, 0.9, 25), 2), rotation=90, fontsize=6)
+    ax.set_yticks(y_ticks, np.round(np.linspace(0.1, 0.9, 25), 2), fontsize=6)
+
+fig.supxlabel(r'$p_{gen}$')
+fig.supylabel(r'$p_{SWAP}$', x = 0.01)
+fig.suptitle("Difference between published latency and analytical solution for different segments")
+fig.tight_layout()
 
 
-for n in [3, 4, 5]:
-    diff_mat = np.zeros(shape = (100, 100))
-    diff_mat = match_analytical(n, diff_mat)
-    np.savetxt(f"different_matrix_{n-1}_seg.txt", diff_mat)
+cbar = fig.colorbar(cax1, ax=axes, orientation='vertical', pad = 0.01)
+
+plt.show()
+
