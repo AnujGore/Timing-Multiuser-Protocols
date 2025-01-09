@@ -1,15 +1,12 @@
 import gymnasium as gym
 import numpy as np
 from scipy import sparse
-from utils.env_utils import label_to_coor, hamming_distance
 
-class GridTopologyEnv(gym.Env):
+class FixedPathEnv(gym.Env):
     def __init__(self, n: int, pgen, pswap, **kwargs):
         self.n = n
         self.pgen = pgen
         self.pswap = pswap
-
-        self.ent_procedure = kwargs["ent_procedure"]
 
         self.age_limit = kwargs["age_limit"]
 
@@ -17,7 +14,7 @@ class GridTopologyEnv(gym.Env):
         self.cn_loc = int(n*np.floor(n/2) + np.floor(n/2))
 
         self.action_space = gym.spaces.Box(low = 0.0, high = 2.0, shape = (n**2, n**2), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low = -2.0, high = np.inf, shape = (3, n**2, n**2), dtype = np.float32)
+        self.observation_space = gym.spaces.Box(low = -2.0, high = np.inf, shape = (4, n**2, n**2), dtype = np.float32)
 
     def reset(self):
         #Initialize adjancency and life matrices
@@ -39,25 +36,9 @@ class GridTopologyEnv(gym.Env):
         for idx, a in enumerate(action_to_do):
             #Simulate entanglement
             if a == 1:
-
                 nodes_to_entangle = action_coors[idx]
-
-                #Regardless of success, the node has attempted entanglement
-                if self.ent_procedure == "SenderReceiver":
-                    node1_coor = label_to_coor(nodes_to_entangle[0], self.n)
-                    node2_coor = label_to_coor(nodes_to_entangle[1], self.n)
-                    cn_coor = label_to_coor(self.cn_loc, self.n)
-                    sender_node_id = np.argmin([
-                        hamming_distance(node1_coor, cn_coor),
-                        hamming_distance(node2_coor, cn_coor)
-                    ])
-                    sender_node = nodes_to_entangle[sender_node_id]
-
-                    entanglement_matrix[sender_node, sender_node] += 1
-                
-                if self.ent_procedure == "MeetInTheMiddle":
-                    entanglement_matrix[nodes_to_entangle[0], nodes_to_entangle[0]] += 0.5
-                    entanglement_matrix[nodes_to_entangle[1], nodes_to_entangle[1]] += 0.5
+                entanglement_matrix[nodes_to_entangle[0], nodes_to_entangle[0]] += 0.5
+                entanglement_matrix[nodes_to_entangle[1], nodes_to_entangle[1]] += 0.5
                 
                 #We can establish a link if the attempt is successful
                 if np.random.rand() < self.pgen:
@@ -70,7 +51,6 @@ class GridTopologyEnv(gym.Env):
 
             #Simulate swap
             if a == 2:
-
                 node_to_swap = action_coors[idx]
 
                 #First we ensure that there are two links for the swap to occur
@@ -88,12 +68,12 @@ class GridTopologyEnv(gym.Env):
                         age_matrix[nodes_to_connect[0], nodes_to_connect[1]] = max(
                             age_matrix[nodes_to_connect[0], node_to_swap[0]],
                             age_matrix[nodes_to_connect[1], node_to_swap[0]]
-                        ) - 1
+                        )
 
                         age_matrix[nodes_to_connect[1], nodes_to_connect[0]] = max(
                             age_matrix[nodes_to_connect[0], node_to_swap[0]],
                             age_matrix[nodes_to_connect[1], node_to_swap[0]]
-                        ) - 1
+                        )
                     
                     #Regardless of swap or not, we remove the connected links
                     adjacency_matrix[node_to_swap[0], nodes_to_connect[0]] = 0.
@@ -152,5 +132,5 @@ class GridTopologyEnv(gym.Env):
 
 gym.register(
     id ='QuantumRepeatersGrid-v0',
-    entry_point=GridTopologyEnv
+    entry_point=FixedPathEnv,
     )

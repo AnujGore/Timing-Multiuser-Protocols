@@ -1,9 +1,8 @@
-import networkx as nx
 import torch
 from torch.nn import init
 import math
 import numpy as np
-
+from utils.agent_utils import sample_from_prob, shortest_path
 
 class DualWeightsNet(torch.nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim):
@@ -58,8 +57,8 @@ class DualLinear(torch.nn.Module):
             init.uniform_(self.bias, -bound, bound)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        Ax = torch.mm(self.weight_front, input)
-        return torch.mm(Ax, self.weight_back) + self.bias
+        Ax = torch.matmul(self.weight_front, input)
+        return torch.matmul(Ax, self.weight_back) + self.bias
 
     def extra_repr(self) -> str:
         return f'in_features={self.in_features}, out_features={self.out_features}, bias={self.bias is not None}'
@@ -69,8 +68,7 @@ class DualLinear(torch.nn.Module):
 class Agent:
     def __init__(self, n, **kwargs):
         self.n = n
-        this_lattice = nx.grid_graph((n, n))
-        self.lattice_adj = torch.tensor(nx.adjacency_matrix(this_lattice).todense())
+        self.path_adj = torch.Tensor(shortest_path(n)).to(torch.float32)
 
         self.edge_action_model = DualWeightsNet(n**2, kwargs["hidden_dims"], n**2)
         self.node_action_model = DualWeightsNet(n**2, kwargs["hidden_dims"], n**2)
@@ -82,12 +80,25 @@ class Agent:
         self.cn_loc = int(np.floor(n**2/2))
         self.user_loc = np.array([0, n-1, n**2-1, n**2 - n - 1])
 
+        self.this_parameters = list(self.edge_action_model.parameters()) + list(self.node_action_model.parameters())
+
 
     def predict_action(self, state):
-        edge_action_tensor = torch.abs(torch.mul(self.edge_action_model(state), self.lattice_adj)) #To get rid of edge interactions which do not exist
-        node_action_tensor = torch.diag(self.node_action_model(state)[self.rng, self.rng]) #To get rid of edge interactions which do not exist
+        #Check if state is a tensor
+        if type(state) != 'torch.Tensor':
+            state = torch.Tensor(state)
 
-        edge_loc = torch.where(self.lattice_adj == 1)
+        #Unpack state if necessary
+        if state.shape[0] == 4:
+            state = state[1, :, :] #Training on age matrix only
+
+        #Setting dtype
+        state = state.to(torch.float32)
+
+        edge_action_tensor = torch.abs(torch.mul(self.edge_action_model(state), self.path_adj)) #To get rid of edge interactions which do not exist
+        node_action_tensor = torch.diag(self.node_action_model(state)[self.rng, self.rng]) #For swaps only
+
+        edge_loc = torch.where(self.path_adj == 1)
 
         all_probabilities = torch.cat([node_action_tensor[self.rng, self.rng], edge_action_tensor[edge_loc[0], edge_loc[1]]])
         all_probabilities = self.softmaxer(all_probabilities)
@@ -98,31 +109,24 @@ class Agent:
         prob_entangle_tensor[edge_loc[0], edge_loc[1]] = all_probabilities[self.n**2:]
         prob_entangle_tensor = torch.triu(prob_entangle_tensor)
 
-        prob_action_tensor = prob_swap + prob_entangle_tensor
+        prob_action_tensor_upper = prob_swap + prob_entangle_tensor
+        prob_action_tensor_lower = prob_action_tensor_upper.t()
+        prob_action_tensor = prob_action_tensor_upper + prob_action_tensor_lower - torch.diag(torch.diag(prob_action_tensor_lower))
 
-        action_tensor = torch.zeros_like(prob_action_tensor)
+        #User and CN do not swap
+        prob_action_tensor[self.user_loc, self.user_loc] = 0
+        prob_action_tensor[self.cn_loc, self.cn_loc] = 0
 
-        for i in range(prob_action_tensor.size(0)):
-            diagonal_value = prob_action_tensor[i, i]
-            off_diagonal_values = prob_action_tensor[i, :].clone()
-            off_diagonal_values[i] = float('-inf')
+        #Make accessible to other methods
+        self.prob_action_tensor = prob_action_tensor
 
-            max_off_diagonal_value = off_diagonal_values.max()
-            max_off_diagonal_index = off_diagonal_values.argmax()
-
-            # To repeat or not to repeat; that is the question
-            if diagonal_value >= max_off_diagonal_value:
-                if i == self.cn_loc:
-                    pass
-                elif i in self.user_loc:
-                    pass
-                else:
-                    action_tensor[i, :] = 0  
-                    action_tensor[:, i] = 0  
-                    action_tensor[i, i] = 2 
-            else:
-                action_tensor[i, max_off_diagonal_index] = 1
-                action_tensor[max_off_diagonal_index, i] = 1  
-                action_tensor[i, i] = 0  
-        
-        return action_tensor
+        return sample_from_prob(prob_action_tensor, self.cn_loc, self.user_loc)
+    
+    def log_prob(self, action):
+        self.prob_action_tensor = torch.clamp(self.prob_action_tensor, min=1e-10, max=1 - 1e-10)
+        log_prob = torch.sum(action*torch.log(self.prob_action_tensor) + (1-action)*torch.log(1-self.prob_action_tensor))
+        return log_prob
+    
+    def entropy(self):
+        entropy = -torch.sum(self.prob_action_tensor*torch.log(self.prob_action_tensor))
+        return entropy
