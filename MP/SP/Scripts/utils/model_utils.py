@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 def evaluate(model_path, env, model, model_config, device, all_actions, max_actions_taken):
 
@@ -29,10 +30,36 @@ def evaluate(model_path, env, model, model_config, device, all_actions, max_acti
     return actions_taken, reward
 
 
-def reward_function(done: bool, truncated: bool, actions_taken):
+def reward_function(next_state, previous_state, path_matrix, truncated, done, actions_taken):
+    reward = 0
+    new_edges = torch.Tensor(next_state[0] - previous_state[0])
+
+    n = np.sqrt(len(next_state[0]))
+    user_loc = np.array([0, n-1, n**2-1, n**2 - n], dtype = int)
+    cn_loc = int(n*np.floor(n/2) + np.floor(n/2))
+
+    #Check if new entanglement has been generated
+    new_edges_ent = new_edges.clone()
+    new_edges_ent = torch.mul(path_matrix, new_edges_ent)
+
+    if (new_edges_ent == 1.).any():
+        reward += 5
+
+    #Check if swap has been performed
+    new_edges_swap = new_edges.clone()
+    mask = torch.logical_not(path_matrix).to(torch.int)
+    new_edges_swap = torch.mul(mask, new_edges_swap)
+
+    if (next_state[0][cn_loc, user_loc] == 1.).any():
+        reward += 50
+
+    if (new_edges_swap == 1.).any():
+        reward += 10
     if done:
-        return 100 - actions_taken
+        reward += 100 - actions_taken
     if truncated:
         return -100
-    else:
-        return -1
+
+    return reward
+
+

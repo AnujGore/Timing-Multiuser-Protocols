@@ -5,6 +5,7 @@ import numpy as np
 import time
 import wandb
 from utils.general_utils import check_if_tensor
+from utils.model_utils import reward_function
 
 #For wandb
 class wandbArgs:
@@ -15,8 +16,8 @@ class wandbArgs:
 class environmentArgs:
     pgen = 0.7
     pswap = 0.5
-    age_limit = 4
-    n = 7
+    age_limit = 7
+    n = 3
 
 #For training
 class hyperparametersArgs:
@@ -82,8 +83,6 @@ if __name__ == "__main__":
     init_state, _ = myEnv.reset()
     next_done = torch.tensor(False, dtype=torch.float32).to(device=device)
 
-    number_truncations = 0
-
     #Set initial state to current state
     current_state = init_state
 
@@ -97,12 +96,12 @@ if __name__ == "__main__":
                 log_probs = myPolicy.log_prob(action)
 
             #Step through environment
-            next_state, reward, terminated, truncated, _ = myEnv.act(action.numpy())
+            next_state, inter_reward, terminated, truncated, _ = myEnv.act(action.numpy())
+            reward = reward_function(next_state, current_state, myPolicy.actor.path_adj, truncated, terminated, step)
             next_done = torch.tensor(terminated or truncated, dtype=torch.float32).to(device=device)
 
             #Move to next state
             current_state = next_state
-
             rewards[step] = check_if_tensor(reward).to(device=device)
             actions[step] = check_if_tensor(action).to(device=device)
             values[step] = check_if_tensor(value).to(device=device)
@@ -113,7 +112,6 @@ if __name__ == "__main__":
 
             #If the episode is terminated or truncated, reset the environment
             if terminated or truncated:
-                if truncated: number_truncations += 1  
                 current_state, _ = myEnv.reset()
                 next_done = torch.tensor(False, dtype=torch.float32).to(device=device)
             
@@ -136,8 +134,7 @@ if __name__ == "__main__":
                     loss.backward()
                     optimizer.step()
 
-            #Log the training progress
-            if global_step % fixedArgs.log_freq == 0:
-                wandb.log({"Reward": rewards[global_step - fixedArgs.log_freq:global_step].mean().item(), "Loss": loss.item(), "Number of Truncations": number_truncations})
-                number_truncations = 0
-                wandb.log({"Adjacency": wandb.Image(current_state[0])})
+            wandb.log({"Reward": rewards[step].mean().item()})
+
+        #Log the training progress
+        wandb.log({"Episodic Mean Reward": rewards.mean().item()})

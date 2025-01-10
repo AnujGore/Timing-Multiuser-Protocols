@@ -10,7 +10,7 @@ class FixedPathEnv(gym.Env):
 
         self.age_limit = kwargs["age_limit"]
 
-        self.user_loc = np.array([0, n-1, 2*n, n**2 - 1])
+        self.user_loc = np.array([0, n-1, n**2-1, n**2 - n])
         self.cn_loc = int(n*np.floor(n/2) + np.floor(n/2))
 
         self.action_space = gym.spaces.Box(low = 0.0, high = 2.0, shape = (n**2, n**2), dtype=np.float32)
@@ -121,7 +121,7 @@ class FixedPathEnv(gym.Env):
     
     def _is_bad_state(self):
         bad_state = False
-        for n in range(self.n):
+        for n in range(self.n**2):
             if n == self.cn_loc:
                 if np.sum(self.agent_state[0, n]) > 4:
                     bad_state = True

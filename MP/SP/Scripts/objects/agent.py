@@ -2,7 +2,7 @@ import torch
 from torch.nn import init
 import math
 import numpy as np
-from utils.agent_utils import sample_from_prob, shortest_path
+from utils.agent_utils import sample_from_prob, shortest_path, softmax_with_zero
 
 class DualWeightsNet(torch.nn.Module):
     def __init__(self, input_dim, hidden_dims, output_dim):
@@ -75,10 +75,10 @@ class Agent:
 
         self.rng = torch.arange(0, n**2)
 
-        self.softmaxer = torch.nn.Softmax(dim = 0)
-
         self.cn_loc = int(np.floor(n**2/2))
-        self.user_loc = np.array([0, n-1, n**2-1, n**2 - n - 1])
+        self.user_loc = np.array([0, n-1, n**2-1, n**2 - n])
+
+        self.softmaxer = softmax_with_zero
 
         self.this_parameters = list(self.edge_action_model.parameters()) + list(self.node_action_model.parameters())
 
@@ -95,32 +95,21 @@ class Agent:
         #Setting dtype
         state = state.to(torch.float32)
 
-        edge_action_tensor = torch.abs(torch.mul(self.edge_action_model(state), self.path_adj)) #To get rid of edge interactions which do not exist
+        edge_action_tensor = torch.triu(torch.abs(torch.mul(self.edge_action_model(state), self.path_adj))) #To get rid of edge interactions which do not exist
         node_action_tensor = torch.diag(self.node_action_model(state)[self.rng, self.rng]) #For swaps only
 
-        edge_loc = torch.where(self.path_adj == 1)
-
-        all_probabilities = torch.cat([node_action_tensor[self.rng, self.rng], edge_action_tensor[edge_loc[0], edge_loc[1]]])
-        all_probabilities = self.softmaxer(all_probabilities)
-        
-        prob_swap = torch.diag(all_probabilities[:self.n**2])
-
-        prob_entangle_tensor = torch.zeros(size=(self.n**2, self.n**2))
-        prob_entangle_tensor[edge_loc[0], edge_loc[1]] = all_probabilities[self.n**2:]
-        prob_entangle_tensor = torch.triu(prob_entangle_tensor)
-
-        prob_action_tensor_upper = prob_swap + prob_entangle_tensor
-        prob_action_tensor_lower = prob_action_tensor_upper.t()
-        prob_action_tensor = prob_action_tensor_upper + prob_action_tensor_lower - torch.diag(torch.diag(prob_action_tensor_lower))
+        prob_action_tensor = edge_action_tensor + node_action_tensor
 
         #User and CN do not swap
         prob_action_tensor[self.user_loc, self.user_loc] = 0
         prob_action_tensor[self.cn_loc, self.cn_loc] = 0
 
-        #Make accessible to other methods
+        prob_action_tensor = self.softmaxer(prob_action_tensor)
+
+        #So other methods can use it
         self.prob_action_tensor = prob_action_tensor
 
-        return sample_from_prob(prob_action_tensor, self.cn_loc, self.user_loc)
+        return sample_from_prob(prob_action_tensor)
     
     def log_prob(self, action):
         self.prob_action_tensor = torch.clamp(self.prob_action_tensor, min=1e-10, max=1 - 1e-10)

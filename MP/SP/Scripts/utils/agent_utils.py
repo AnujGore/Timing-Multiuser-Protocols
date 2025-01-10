@@ -2,31 +2,43 @@ import torch
 import numpy as np
 import networkx as nx
 
-def sample_from_prob(tensor, cn_loc, user_loc):
-    action_tensor = torch.zeros_like(tensor)
+def sample_from_prob(tensor):
+    #First we sample the upper triangular action matrix
+    action_tensor_triu = torch.zeros_like(tensor)
+    tensor_triu = tensor.clone()
 
-    for i in range(tensor.size(0)):
-        diagonal_value = tensor[i, i]
-        off_diagonal_values = tensor[i, :].clone()
-        off_diagonal_values[i] = float('-inf')
+    rng = torch.arange(0, tensor.size(0))
 
-        max_off_diagonal_value = off_diagonal_values.max()
-        max_off_diagonal_index = off_diagonal_values.argmax()
-
-        # To repeat or not to repeat; that is the question
-        if diagonal_value >= max_off_diagonal_value:
-            if i == cn_loc:
-                pass
-            elif i in user_loc:
-                pass
+    for i in range(tensor_triu.size(0)):
+        if sum(tensor_triu[i]) != 0:
+            index = torch.multinomial(tensor_triu[i], 1).item()         #This ensures we sample from the elements rather than a coin toss
+            if index == i:
+                action_tensor_triu[i, i] = 2
             else:
-                action_tensor[i, :] = 0  
-                action_tensor[:, i] = 0  
-                action_tensor[i, i] = 2 
-        else:
-            action_tensor[i, max_off_diagonal_index] = 1
-            action_tensor[max_off_diagonal_index, i] = 1  
-            action_tensor[i, i] = 0  
+                action_tensor_triu[i] = torch.ones(action_tensor_triu[i].size(0))
+                action_tensor_triu[i][tensor_triu[i] == 0] = 0
+                action_tensor_triu[i, i] = 0
+
+    #Then the lower triangular
+    action_tensor_tril = torch.zeros_like(tensor)
+    tensor_tril = tensor.t()
+    for i in range(tensor_tril.size(0)):
+        if sum(tensor_tril[i]) != 0:
+            index = torch.multinomial(tensor_tril[i], 1).item()         #This ensures we sample from the elements rather than a coin toss
+            if index == i:
+                action_tensor_tril[i, i] = 2
+            else:
+                action_tensor_tril[i] = torch.ones(action_tensor_tril[i].size(0))
+                action_tensor_tril[i][tensor_tril[i] == 0] = 0
+                action_tensor_tril[i, i] = 0
+
+    #Mask with a logical and to ensure that the action rules are followed
+    mask = torch.logical_and(action_tensor_triu, action_tensor_tril.t())
+    action_tensor = torch.mul(mask, action_tensor_triu)
+    action_tensor = action_tensor + action_tensor.t() 
+    
+    #To get rid of double added (2 + 2 = 4)
+    action_tensor[rng, rng] = action_tensor[rng, rng]/2
 
     return action_tensor
 
@@ -96,3 +108,9 @@ def generate_random_action(n, all_actions_list, **kwargs):
     else:
         all_actions_list.append(final_action_adjacency)
         return final_action_adjacency, all_actions_list
+    
+
+def softmax_with_zero(tensor):
+    softmax_result = torch.nn.functional.softmax(tensor, dim = 1)
+    softmax_result[tensor == 0] = 0
+    return softmax_result
