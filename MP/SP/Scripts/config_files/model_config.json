@@ -1,6 +1,0 @@
-{
-    "hidden_layers": [256, 128, 64],
-    "dropout_rate": 0.6,
-    "learning_rate": 0.001,
-    "num_features": 32
-}

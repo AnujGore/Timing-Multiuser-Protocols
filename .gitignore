@@ -169,6 +169,5 @@ cython_debug/
 plotting.py
 wandb/
 hyperparameter_sweep.py
-SP_chain/
-conda_env/
 plot_results.py
+daquiri/

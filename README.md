@@ -1,58 +1,46 @@
-Timing Multiuser Protocols
--------------------------
+<p align="center">
+  <img src="assets/qamel_logo.png" alt="Logo" width="200"/>
+</p>
 
-In this repository, we store and document all the resources necessary for quantifying the latency of different multiuser entanglement routing protocols. The purpose of this file is to note down the organisation and pinpoint the location of information necessary for understanding and reproducing our results
+# Qamel
 
-### Table of Contents
-* About this project
-* Structure of the repository
-* Getting Started
-* Usage
-* License
+This project is to introduce Qamel. A model-free reinforcement learning agent that minimizes the number of operations executed for any ```n``` node grid topology resulting in a multipartite entangled distribution.
 
-==========================
-
-### About this project
-
-The protocols we look to explore are the Shortest Path, MultiPath Greedy and MultiPath Cooperative or SP, MP-G and MP-C respectively. The first protocol was introduced by [Bugalho et al](https://arxiv.org/pdf/2103.14759), and in it, entanglement is generated on a predetermined path from a selected central node to each of the users. When generated, the fusion operation at the central node entangles the users giving us our needed state. The latter two protocols were introduced by [Sutcliffe et al](https://arxiv.org/pdf/2303.03334) and in these protocols, the need for a precomputed path is made unnecessary. In MP-G, entanglement is simulated and the protocol checks if there exists a valid path from the user to the central node, repeating entanglement generation if necessary. For MP-C, entanglement is simulated and the protocol checks if there exists a tree connecting the nodes, eliminating the need for the central node. The linked papers discuss the protocols in detail. Here we report the method used to quantify the latency of these protocols.
-
-==========================
-
-### Structure of the Repository
-
-Below we document the structure of the repository:
+## Project Structure
 
 ```
-root/
-    ├── MP/
-        ├── SP/         # Look within folders for documentation 
-        ├── SP_chain/   # Look within folders for documentation 
-    ├── ShortestPath/   # Look within folders for documentation 
-    ├── README.md       
-    ├── LICENSE
-    └── requirements.txt
+project_root/
+│── analytical_solution/
+│   │── monte_carlo.py
+│   │── analytical_equations.py
+│   └── utils.py
+│
+│── qamel/
+│   │── agent.py
+│   │── environment.py
+│   └── utils.py
+│
+│── scripts/
+|   │── evaluate_qamel.py
+│   └── train_qamel.py
+│
+│── notebooks/
+│   │── calculate_ratio_and_latencies.ipynb
+│   └── verify_simulation.ipynb
+│
+│── README.md
+└── .gitignore
 ```
 
-==========================
 
-### Getting started
-
-We list the necessary libraries in the `requirements.txt` file and to recreate our results, running 
+### Training the Model-Free Agent
+Run the following command to train the qamel agent for ```n``` nodes, ```pgen``` probability of generating entanglement and ```pswap``` probability of swapping:
+```sh
+python ./scripts/train_qamel.py --pgen pgen --pswap pswap --n n
 
 ```
-pip install -r requirements.txt
-```
+## Accepted paper
+The verified results (demonstrated in the ```verify_simulation.ipynb``` notebook) has been accepted at OFC 2025, with the paper presented as the ```OFC_paper_2025.pdf``` in the repository.
 
-in the command line of the folder where the project needs to be stored.
-
-==========================
-
-### Usage
-
-Within each folder, the `.ipynb` file exists which instruct how each result was reached and how it can be reproduced.
-
-==========================
-
-### License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+## License
+This project is licensed under the MIT License. See `LICENSE` for details.
